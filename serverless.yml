@@ -1,0 +1,52 @@
+service: sls-template
+
+provider:
+  name: aws
+  runtime: nodejs6.10
+  stage: ${opt:stage, 'dev'}
+  region: ap-northeast-1
+  memorySize: 128
+  timeout: 5
+
+package:
+  individually: true
+  exclude:
+    - ./**
+
+functions:
+  hello:
+    handler: functions/hello/index.handler
+    name: ${self:service}-${self:provider.stage}-hello
+    package:
+      include:
+        - functions/hello/**
+    events:
+      - http:
+          path: hello
+          method: get
+          integration: lambda-proxy
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+              - Pragma
+              - Cache-Control
+              - If-Modified-Since
+            allowCredentials: true
+#          authorizer:
+#            name: authorizer
+#            type: token
+#            resultTtlInSecounds: 0
+
+resources:
+  Resources:
+    ApiGatewayRestApi:
+        Type: AWS::ApiGateway::RestApi
+        Properties:
+          Name: ${self:service}-${self:provider.stage}
+
